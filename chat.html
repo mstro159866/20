@@ -1,99 +1,65 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دردشة بدون سيرفر - ستايل ديسكورد</title>
-    <style>
-        body {
-            background-color: #36393f;
-            color: #dcddde;
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        #container {
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            background: #2f3136;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-        }
-        input, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            border: none;
-        }
-        input, textarea {
-            background: #40444b;
-            color: white;
-        }
-        button {
-            background: #7289da;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #677bc4;
-        }
-        #chat {
-            height: 200px;
-            overflow-y: auto;
-            background: #18191c;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: left;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دردشة P2P برو</title>
+  <style>
+    body { background:#2c2f33; color:#fff; font-family:sans-serif; text-align:center; padding:20px; }
+    textarea, input, button { width:90%; padding:10px; margin:5px; border:none; border-radius:5px; }
+    textarea, input { background:#23272a; color:white; }
+    button { background:#7289da; color:white; cursor:pointer; }
+    #chat { background:#1e2124; padding:10px; height:200px; overflow-y:auto; border-radius:5px; text-align:left; }
+  </style>
 </head>
 <body>
-    <div id="container">
-        <h2>دردشة P2P - بدون سيرفر</h2>
-        <textarea id="code" placeholder="ضع الكود هنا"></textarea>
-        <button onclick="connect()">اتصال</button>
-        <button onclick="generateOffer()">إنشاء رابط</button>
-        <div id="chat"></div>
-        <input type="text" id="msg" placeholder="اكتب رسالة..." />
-        <button onclick="send()">إرسال</button>
-    </div>
+  <h2>شات P2P بدون سيرفر 🔗</h2>
+  <textarea id="code" placeholder="📋 ضع الكود هنا أو انسخه لصديقك"></textarea><br>
+  <button onclick="connect()">🔌 اتصال</button>
+  <button onclick="create()">⚡ إنشاء</button>
+  <div id="chat"></div>
+  <input id="msg" placeholder="✍️ اكتب رسالة...">
+  <button onclick="send()">📤 إرسال</button>
 
-    <script>
-        let peer = new RTCPeerConnection();
-        let channel = peer.createDataChannel("chat");
+  <script>
+    const words = ["red", "blue", "green", "apple", "banana", "cloud", "sky", "light", "dark", "fast", "slow", "cat", "dog"];
 
-        peer.ondatachannel = (event) => {
-            let receiveChannel = event.channel;
-            receiveChannel.onmessage = (event) => {
-                let chat = document.getElementById("chat");
-                chat.innerHTML += `<p>${event.data}</p>`;
-            };
-        };
+    function generateCode() {
+      let code = Array.from({length: 3}, () => words[Math.floor(Math.random() * words.length)]).join("-");
+      return code;
+    }
 
-        async function generateOffer() {
-            let offer = await peer.createOffer();
-            await peer.setLocalDescription(offer);
-            setTimeout(() => {
-                const offerText = JSON.stringify(peer.localDescription);
-                navigator.clipboard.writeText(offerText).then(() => {
-                    alert("📋 تم نسخ الرابط تلقائيًا!");
-                }).catch(() => {
-                    alert(offerText);
-                });
-            }, 1000);
-        }
+    let p = new RTCPeerConnection(), ch = p.createDataChannel("x");
 
-        async function connect() {
-            let answer = JSON.parse(document.getElementById("code").value);
-            await peer.setRemoteDescription(answer);
-        }
+    ch.onmessage = e => chat.innerHTML += `<p>${e.data}</p>`;
+    p.ondatachannel = e => e.channel.onmessage = ch.onmessage;
 
-        function send() {
-            let message = document.getElementById("msg").value;
-            channel.send(message);
-            document.getElementById("chat").innerHTML += `<p><b>أنا:</b> ${message}</p>`;
-        }
-    </script>
+    async function create() {
+      let offer = await p.createOffer();
+      await p.setLocalDescription(offer);
+      setTimeout(() => {
+        let text = JSON.stringify(p.localDescription);
+        let customCode = generateCode();
+        navigator.clipboard.writeText(text);
+        alert(`✅ تم النسخ تلقائيًا!\n🔐 كود الغرفة: ${customCode}\nأرسل الكود لصديقك.`);
+      }, 500);
+    }
+
+    async function connect() {
+      let remote = JSON.parse(document.getElementById("code").value);
+      await p.setRemoteDescription(remote);
+    }
+
+    function send() {
+      if (ch.readyState === "open") {
+        let msg = document.getElementById("msg").value;
+        ch.send(msg);
+        chat.innerHTML += `<p><b>أنا:</b> ${msg}</p>`;
+        document.getElementById("msg").value = "";
+      } else {
+        alert("💡 الاتصال غير جاهز بعد!");
+      }
+    }
+  </script>
 </body>
 </html>
